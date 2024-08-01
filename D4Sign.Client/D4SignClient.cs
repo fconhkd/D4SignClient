@@ -56,7 +56,7 @@ namespace D4Sign.Client
         /// Upload Document Binary. For more information visit <see cref="http://docapi.d4sign.com.br/#upload-file-binary">D4Sign API REST</see> 
         /// </summary>
         /// <returns></returns>
-        public async Task<UploadDocumentResult> UploadDocument(string safeBoxKey , string filePath, byte[] fileBytes, string fileName, string folderKey)
+        public async Task<UploadDocumentResult> UploadDocument(string safeBoxKey, string filePath, byte[] fileBytes, string fileName, string folderKey)
         {
             if (string.IsNullOrEmpty(filePath)) throw new ArgumentNullException("path", "File path is null or empty.");
             if (fileBytes.Length.Equals(0)) throw new ArgumentNullException("file", "File is empty.");
@@ -67,12 +67,15 @@ namespace D4Sign.Client
 
             var data = new UploadDocumentResquest
             {
-                
-                    Content = content
-                    , Folder = folderKey
-                    , MimeType = mimeType
-                    , Name = fileName
-                
+
+                Content = content
+                    ,
+                Folder = folderKey
+                    ,
+                MimeType = mimeType
+                    ,
+                Name = fileName
+
             };
 
             return await SendAsync<UploadDocumentResult>(HttpMethod.Post, "documents/" + safeBoxKey + "/uploadbinary", data);
@@ -89,12 +92,41 @@ namespace D4Sign.Client
             var data = new GetDocumentRequest
             {
 
-                DocumentDownloadType = documentDownloadType.ToString()                
+                DocumentDownloadType = documentDownloadType.ToString()
             };
 
-            return await SendAsync<GetDocumentResult>(HttpMethod.Post, string.Format("documents/{0}/download", documentKey),data);
+            return await SendAsync<GetDocumentResult>(HttpMethod.Post, string.Format("documents/{0}/download", documentKey), data);
         }
 
+        /// <summary>
+        /// Get Document. For more information visit <see cref="https://docapi.d4sign.com.br/docs/endpoints-2#getdocuments">D4Sign API REST</see>
+        /// </summary>
+        /// <param name="documentKey"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public async Task<DocumentResult> ListDocument(string documentKey)
+        {
+            if (string.IsNullOrEmpty(documentKey)) throw new ArgumentNullException("documentKey", "Document key is null or empty.");
+
+            var result = await SendAsync<IEnumerable<DocumentResult>>(HttpMethod.Get, string.Format("documents/{0}", documentKey));
+
+            return new List<DocumentResult>(result).FirstOrDefault();
+        }
+
+        public async Task<IEnumerable<DocumentResult>> ListAllDocuments(int page = 1)
+        {
+            int count = 0;
+            var list = new List<DocumentResult>();
+            do
+            {
+                var result = await SendAsync<IList<DocumentResult>>(HttpMethod.Get, string.Format("documents"), null, page);
+                list.AddRange(result);
+                count = result.Count;
+                page++;
+            } while (count >= 500);
+
+            return new List<DocumentResult>(list);
+        }
 
         //Rever este método AddDocumentSignersSignersResult
         /// <summary>        
@@ -120,7 +152,7 @@ namespace D4Sign.Client
             if (string.IsNullOrEmpty(documentKey)) throw new ArgumentNullException("documentKey", "Document key is null or empty.");
 
             var result = await SendAsync<IEnumerable<DocumentListSignersResult>>(HttpMethod.Get, string.Format("documents/{0}/list", documentKey));
-            
+
             return new List<DocumentListSignersResult>(result).FirstOrDefault();
         }
 
@@ -187,7 +219,7 @@ namespace D4Sign.Client
         /// Get Document. For more information visit <see cref="http://docapi.d4sign.com.br/#send-signer">D4Sign API REST</see>  
         /// </summary>
         /// <returns></returns>
-        public async Task<MessageResult> SendDocumentToSign(string documentKey,string message, SkipEmailType skipEmail, WorkFlowType workFlow)
+        public async Task<MessageResult> SendDocumentToSign(string documentKey, string message, SkipEmailType skipEmail, WorkFlowType workFlow)
         {
             if (string.IsNullOrEmpty(documentKey)) throw new ArgumentNullException("documentKey", "Document key is null or empty.");
 
@@ -196,12 +228,12 @@ namespace D4Sign.Client
                 Message = message,
                 SkipEmail = skipEmail.GetHashCode(),
                 Workflow = workFlow.GetHashCode()
-                
+
             };
 
             return await SendAsync<MessageResult>(HttpMethod.Post, string.Format("documents/{0}/sendtosigner", documentKey, data));
 
-            
+
         }
 
 
@@ -231,7 +263,7 @@ namespace D4Sign.Client
             if (string.IsNullOrEmpty(documentKey)) throw new ArgumentNullException("documentKey", "Document key is null or empty.");
             if (string.IsNullOrEmpty(documentSigneremail)) throw new ArgumentNullException("documentSigneremail", "Document Signer email is null or empty.");
             if (string.IsNullOrEmpty(documentSignerKey)) throw new ArgumentNullException("documentSignerKey", "Document Signer key is null or empty.");
-            
+
             var data = new ResendSignatureLinkRequest
             {
                 DocumentSignerEmail = documentSigneremail,
@@ -242,9 +274,12 @@ namespace D4Sign.Client
         }
 
         #region{Util}
-        private async Task<T> SendAsync<T>(HttpMethod method, string path, object content = null)
+        private async Task<T> SendAsync<T>(HttpMethod method, string path, object content = null, int? page = null)
         {
-            string url = GetUrl(path);
+            string url;
+
+            if (page.HasValue) url = GetUrl(path, page);
+            else url = GetUrl(path);
 
             using (var client = new HttpClient())
             using (var request = new HttpRequestMessage(method, url))
@@ -259,7 +294,7 @@ namespace D4Sign.Client
                         });
                         request.Content = new StringContent(json, Encoding.UTF8, "application/json");
                         //application/json
-                        
+
                     }
 
                     using (var response = await client.SendAsync(request))
@@ -268,7 +303,8 @@ namespace D4Sign.Client
 
                         if (response.IsSuccessStatusCode)
                         {
-                            return DeserializeJsonFromStream<T>(stream);                        }
+                            return DeserializeJsonFromStream<T>(stream);
+                        }
                         else
                         {
                             throw CreateException(stream, (int)response.StatusCode);
@@ -280,9 +316,9 @@ namespace D4Sign.Client
                     if (request.Content != null) request.Dispose();
                 }
             }
-        }       
+        }
 
-        public string GetUrl(string path)
+        public string GetUrl(string path, int? page = null)
         {
             string uri1 = Host.TrimEnd('/');
             path = path.TrimStart('/');
@@ -291,8 +327,8 @@ namespace D4Sign.Client
             url += url.IndexOf('?') >= 0 ? "&" : "?";
             url += "tokenAPI=" + Token;
             url += "&cryptKey=" + CryptKey;
+            if (page.HasValue) url += "&pg=" + page;
             return url;
-
         }
 
         private T DeserializeJsonFromStream<T>(Stream stream)
@@ -304,7 +340,7 @@ namespace D4Sign.Client
             using (var jtr = new JsonTextReader(sr))
             {
                 var jr = new JsonSerializer();
-                jr.ContractResolver = new CamelCasePropertyNamesContractResolver();                
+                jr.ContractResolver = new CamelCasePropertyNamesContractResolver();
                 var searchResult = jr.Deserialize<T>(jtr);
                 return searchResult;
             }
