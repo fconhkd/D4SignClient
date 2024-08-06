@@ -1,7 +1,7 @@
 # D4SignClient
 Cliente para o [D4Sign](https://docapi.d4sign.com.br/), atualizado para .NET 8
 
-O projeto me possibilitou utilizar a API do sistema [D4Sign](https://d4sign.com.br/) utilizando tecnologia .Net e navegar nos cofres existentes para fazer o download de documentos assinados, existem outras possibilidades para o uso desse projeto que já foram implementadas por [Hellstricker](https://github.com/Hellstricker), mas, não testei todas, não precisei utilizar ainda.
+O projeto me possibilitou utilizar a API do sistema [D4Sign](https://d4sign.com.br/) utilizando tecnologia .Net e navegar nos cofres existentes para fazer o download de documentos assinados, existem outras possibilidades para o uso desse projeto que já foram implementadas por [Hellstricker](https://github.com/Hellstricker), mas, não testei todas elas, não precisei utilizar ainda.
 
 ### Exemplo usando C#
  ``` csharp
