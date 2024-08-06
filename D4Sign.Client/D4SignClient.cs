@@ -33,7 +33,7 @@ namespace D4Sign.Client
         {
             if (string.IsNullOrEmpty(host)) throw new ArgumentNullException("host", "Host is null or empty");
             if (string.IsNullOrEmpty(version)) throw new ArgumentNullException("version", "Version is null or empty");
-            if (string.IsNullOrEmpty(token)) throw new ArgumentNullException("version", "Token is null or empty");
+            if (string.IsNullOrEmpty(token)) throw new ArgumentNullException("token", "Token is null or empty");
             if (string.IsNullOrEmpty(cryptKey)) throw new ArgumentNullException("CryptKey", "CryptKey is null or empty");
 
             this.Host = host;
